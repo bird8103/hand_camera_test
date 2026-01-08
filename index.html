@@ -41,7 +41,6 @@
     const gestureDiv = document.getElementById('gesture');  // ← 追加
 
     const flipCanvas = document.createElement('canvas');
-    flipCanvas.width = 640; flipCanvas.height = 480;
     const flipCtx = flipCanvas.getContext('2d');
 
     let finalString = "";
@@ -63,6 +62,47 @@
     const config = { locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` };
     const hands = new Hands(config);
 
+    // デバイス検出関数
+    function detectDevice() {
+        const ua = navigator.userAgent.toLowerCase();
+        if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
+            if (ua.includes('ipad') || ua.includes('tablet') || (window.innerWidth > 768 && window.innerHeight > 768)) {
+                return 'tablet';
+            }
+            return 'smartphone';
+        }
+        return 'pc';
+    }
+    // 向き検出関数
+    function getOrientation() {
+        if (screen.orientation) {
+            return screen.orientation.type.includes('portrait') ? 'portrait' : 'landscape';
+        } else if (window.orientation !== undefined) {
+            return Math.abs(window.orientation) === 90 ? 'landscape' : 'portrait';
+        }
+        return window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+    }
+    // ビデオサイズを動的に調整する関数
+    function updateCanvasSize() {
+        const videoWidth = video.videoWidth || 640;  // デフォルト値
+        const videoHeight = video.videoHeight || 480;
+        flipCanvas.width = videoWidth;
+        flipCanvas.height = videoHeight;
+        canvas.width = videoWidth / 4;  // 输出キャンバスは小さくスケール（例: 1/4サイズ）
+        canvas.height = videoHeight / 4;
+
+        // モバイル縦向きの場合、追加の回転処理（必要に応じて）
+        const orientation = getOrientation();
+        const device = detectDevice();
+        console.log(`Device: ${device}, Orientation: ${orientation}, Video size: ${videoWidth}x${videoHeight}`);
+
+        // 例: 縦向きスマートフォンで映像が横長の場合、回転を適用（MediaPipeは正規化なので通常不要だが、flipを調整）
+        if (device === 'smartphone' && orientation === 'portrait' && videoWidth > videoHeight) {
+            // 回転が必要なら、flipCtxでrotateを適用（ただし、ランドマークは影響なし）
+            // flipCtx.rotate(Math.PI / 2); // 90度回転例（テストして調整）
+        }
+    }
+
     const camera = new Camera(video, {
       onFrame: async () => {
         if (y_flick_cooldown != 0) {
@@ -78,8 +118,8 @@
         await hands.send({ image: flipCanvas });
       },
       facingMode: { exact: "user" },
-      width: { ideal: 640 },
-      height: { ideal: 480 },
+      width: { ideal: window.innerWidth },  // 画面サイズに合わせる（動的）
+      height: { ideal: window.innerHeight },
     });
 
     hands.setOptions({
@@ -88,6 +128,16 @@
         minDetectionConfidence: 0.6,
         minTrackingConfidence: 0.6
     });
+
+    video.addEventListener('loadedmetadata', updateCanvasSize);  // ビデオサイズ取得時
+    window.addEventListener('resize', updateCanvasSize);  // リサイズ時（向き変更含む）
+    window.addEventListener('orientationchange', () => {
+        updateCanvasSize();
+        // 必要ならカメラ再スタート（モバイルで向きが変わるとストリームが変わる場合）
+        camera.stop();
+        camera.start();
+    });
+
     function isFingerUp(landmarks, tipIndex, pipIndex) {
       return landmarks[tipIndex].y < landmarks[pipIndex].y - 0.1;
     }
@@ -209,6 +259,9 @@
       display_p.innerHTML = finalString;
     });
 
-    document.getElementById('start').addEventListener('click', () => camera.start());
+    document.getElementById('start').addEventListener('click', () => {
+        camera.start();
+        updateCanvasSize();  // スタート時にもサイズ更新
+    });
     document.getElementById('stop').addEventListener('click', () => camera.stop());
 </script>
