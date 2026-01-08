@@ -41,7 +41,7 @@
     const gestureDiv = document.getElementById('gesture');  // ← 追加
 
     const flipCanvas = document.createElement('canvas');
-    flipCanvas.width = 800; flipCanvas.height = 600;
+    flipCanvas.width = 640; flipCanvas.height = 480;
     const flipCtx = flipCanvas.getContext('2d');
 
     let finalString = "";
@@ -78,15 +78,15 @@
         await hands.send({ image: flipCanvas });
       },
       facingMode: { exact: "user" },
-      width: { ideal: 800 },
-      height: { ideal: 600 },
+      width: { ideal: 640 },
+      height: { ideal: 480 },
     });
 
     hands.setOptions({
         maxNumHands: 1,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        modelComplexity: 0,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6
     });
     function isFingerUp(landmarks, tipIndex, pipIndex) {
       return landmarks[tipIndex].y < landmarks[pipIndex].y - 0.1;
