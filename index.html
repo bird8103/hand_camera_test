@@ -16,7 +16,7 @@
         </style>
     </head>
     <body>
-        <h1>タッチレス操作実験画面</h1>
+        <h1>タッチレス操作実験画面(精度向上版)</h1>
         <p>右上の窓に、緑の手が映れば操作可能です</p>
 
         <video id="input" hidden></video>
@@ -25,7 +25,7 @@
         <button id="start">start</button>
         <button id="stop">stop</button>
         <p>上下フリックでページスクロール</p>
-        <p>ピースで動画再生、パーで動画停止。</p>
+        <p>人差し指と小指を立てると動画再生、パーで動画停止。</p>
         <p>左右フリックで動画再生時間を10秒進める/戻す</p>
         <video id="target_video" src="./testvideo.mp4" controls></video>
         <p id="poit_data"></p>
@@ -153,6 +153,7 @@
         if (up[1] && !up[2] && !up[3] && up[4]) return "yeah!";
         if (up[1] && up[2] && up[3] && !up[4]) return "スリー";
         if (up[1] && up[2] && !up[3] && !up[4]) return "ピース";
+        if (!up[1] && up[2] && up[3] && up[4]) return "人差し指折り曲げ";
         if (up[1] && !up[2] && !up[3] && !up[4]) return "人差し指";
         if (!up[1] && !up[2] && !up[3] && !up[4]) return "グー";
     }
@@ -245,7 +246,7 @@
 
             const currentGesture = detectGesture(marks);
             // ジェスチャーで動画操作
-            if (currentGesture == "ピース") {
+            if (currentGesture == "yeah!") {
                 targetPlay();
             } else if (currentGesture == "パー") {
                 targetStop();
